@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR CONNECT - SPA System</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
+        .loader-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .loader-overlay.active { opacity: 1; pointer-events: all; }
+        .spinner {
+            border: 4px solid #e2e8f0; border-top: 4px solid #2563eb;
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .page-section { display: none; }
+        .page-section.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .stat-card { transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-5px); }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div id="loader" class="loader-overlay"><div class="text-center"><div class="spinner mx-auto mb-2"></div><p class="text-blue-600 text-sm">กำลังโหลด...</p></div></div>
+
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <div class="flex items-center space-x-2 cursor-pointer" onclick="navigate('home')">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg"><i class="fa-solid fa-users-gear text-white text-sm"></i></div>
+                <span class="text-lg font-bold">HR<span class="text-blue-600">Connect</span></span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="navigate('home')" class="text-slate-500 hover:text-blue-600 font-medium text-sm transition">หน้าแรก</button>
+                <button onclick="navigate('dashboard')" class="text-slate-500 hover:text-blue-600 font-medium text-sm transition">รายชื่อพนักงาน</button>
+                <button onclick="navigate('form')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all active:scale-95">เพิ่มบุคลากร</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-10">
+
+        <div id="view-home" class="page-section active">
+            <div class="mb-10 text-center md:text-left">
+                <h1 class="text-3xl font-bold text-slate-900">ยินดีต้อนรับสู่ HR Connect</h1>
+                <p class="text-slate-500 font-light">ระบบจัดการข้อมูลบุคลากรและสรุปภาพรวมองค์กร</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="stat-card bg-blue-600 p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-100 flex flex-col justify-between h-52">
+                    <div class="flex justify-between items-center">
+                        <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-xl"><i class="fa-solid fa-users"></i></div>
+                        <span class="text-xs bg-white/20 px-3 py-1 rounded-full">TOTAL</span>
+                    </div>
+                    <div>
+                        <h2 class="text-5xl font-bold mb-1" id="home-stat-total">0</h2>
+                        <p class="text-blue-100 text-sm">พนักงานทั้งหมด</p>
+                    </div>
+                </div>
+                <div class="stat-card bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between h-52">
+                    <div class="flex justify-between items-center">
+                        <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 text-xl"><i class="fa-solid fa-briefcase"></i></div>
+                        <span class="text-xs text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-full">POSITIONS</span>
+                    </div>
+                    <div>
+                        <h2 class="text-5xl font-bold mb-1" id="home-stat-pos">0</h2>
+                        <p class="text-slate-400 text-sm">ตำแหน่งงาน</p>
+                    </div>
+                </div>
+                <div class="stat-card bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between h-52">
+                    <div class="flex justify-between items-center">
+                        <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 text-xl"><i class="fa-solid fa-user-plus"></i></div>
+                        <span class="text-xs text-amber-600 font-bold bg-amber-50 px-3 py-1 rounded-full">NEW</span>
+                    </div>
+                    <div>
+                        <h2 class="text-5xl font-bold mb-1" id="home-stat-new">0</h2>
+                        <p class="text-slate-400 text-sm">เพิ่มในเดือนนี้</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div onclick="navigate('dashboard')" class="bg-slate-900 p-8 rounded-[2rem] text-white cursor-pointer hover:bg-slate-800 transition-all flex items-center justify-between group">
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">เข้าสู่ระบบจัดการข้อมูล</h3>
+                        <p class="text-slate-400 text-sm">ดูรายชื่อพนักงานทั้งหมดและจัดการประวัติ</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:translate-x-2 transition-transform">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+                <div onclick="navigate('form')" class="bg-white border-2 border-slate-100 p-8 rounded-[2rem] cursor-pointer hover:border-blue-500 transition-all flex items-center justify-between group">
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">ลงทะเบียนพนักงานใหม่</h3>
+                        <p class="text-slate-500 text-sm">กรอกประวัติเบื้องต้นและอัปโหลดรูปภาพ</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:translate-x-2 transition-transform">
+                        <i class="fa-solid fa-plus"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-dashboard" class="page-section">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="bg-blue-50 w-12 h-12 rounded-xl flex items-center justify-center text-blue-600"><i class="fa-solid fa-users text-xl"></i></div>
+                    <div><p class="text-slate-400 text-xs">จำนวนทั้งหมด</p><h2 class="text-2xl font-bold" id="stat-total">0</h2></div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="bg-emerald-50 w-12 h-12 rounded-xl flex items-center justify-center text-emerald-600"><i class="fa-solid fa-briefcase text-xl"></i></div>
+                    <div><p class="text-slate-400 text-xs">ตำแหน่งงาน</p><h2 class="text-2xl font-bold" id="stat-pos">0</h2></div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="bg-amber-50 w-12 h-12 rounded-xl flex items-center justify-center text-amber-600"><i class="fa-solid fa-user-plus text-xl"></i></div>
+                    <div><p class="text-slate-400 text-xs">เพิ่มใหม่เดือนนี้</p><h2 class="text-2xl font-bold" id="stat-new">0</h2></div>
+                </div>
+            </div>
+            <div id="personnel-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            <div id="empty-state" class="hidden text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                <p class="text-slate-400">ยังไม่มีข้อมูลบุคลากร</p>
+            </div>
+        </div>
+
+        <div id="view-form" class="page-section max-w-xl mx-auto">
+            <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+                <div class="bg-slate-900 p-6 text-white text-center">
+                    <h2 class="text-xl font-bold">บันทึกข้อมูลบุคลากร</h2>
+                </div>
+                <form id="personnel-form" class="p-8 space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">ชื่อ-สกุล <span class="text-red-500">*</span></label>
+                        <input type="text" id="input-name" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">ตำแหน่ง <span class="text-red-500">*</span></label>
+                            <input type="text" id="input-position" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">เบอร์โทร</label>
+                            <input type="tel" id="input-phone" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">วันเกิด</label>
+                        <input type="date" id="input-birthdate" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">รูปโปรไฟล์</label>
+                        <input type="file" id="input-file" accept="image/*" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
+                    <div class="pt-4 flex space-x-3">
+                        <button type="button" onclick="navigate('home')" class="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition">ยกเลิก</button>
+                        <button type="submit" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95">บันทึก</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://mulklclddvwqsmskccby.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11bGtsY2xkZHZ3cXNtc2tjY2J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNjU3NzYsImV4cCI6MjA4Nzg0MTc3Nn0.tT6JycS_w3w5g0MqghEcQUyTOXyFVJbVyOpy05FfNcU';
+        const dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const toggleLoader = (show) => document.getElementById('loader').classList.toggle('active', show);
+
+        function handleImageError(imgElement) {
+            const container = imgElement.parentElement;
+            container.innerHTML = `<div class="w-24 h-24 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center text-center p-2 shadow-inner"><p class="text-[10px] text-slate-400 font-medium leading-tight">รูปภาพ<br>ผิดพลาด</p></div>`;
+        }
+
+        const navigate = (view) => {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.getElementById(`view-${view}`).classList.add('active');
+            if(view === 'dashboard' || view === 'home') loadData();
+        };
+
+        const loadData = async () => {
+            toggleLoader(true);
+            try {
+                const { data, error } = await dbClient.from('personnel').select('*').order('created_at', { ascending: false });
+                if (error) throw error;
+                renderUI(data || []);
+            } catch (err) { console.error(err); } finally { toggleLoader(false); }
+        };
+
+        const renderUI = (list) => {
+            const grid = document.getElementById('personnel-grid');
+            const empty = document.getElementById('empty-state');
+            
+            const total = list.length;
+            const positions = [...new Set(list.map(p => p.position))].length;
+            const newThisMonth = list.filter(p => new Date(p.created_at).getMonth() === new Date().getMonth()).length;
+
+            // อัปเดตสถิติทั้งสองหน้า (Dashboard เดิม และ Home ใหม่)
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-pos').innerText = positions;
+            document.getElementById('stat-new').innerText = newThisMonth;
+            
+            document.getElementById('home-stat-total').innerText = total;
+            document.getElementById('home-stat-pos').innerText = positions;
+            document.getElementById('home-stat-new').innerText = newThisMonth;
+
+            grid.innerHTML = '';
+            if (list.length === 0) { grid.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+            grid.classList.remove('hidden'); empty.classList.add('hidden');
+
+            list.forEach(item => {
+                const defaultImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.full_name)}&background=random&color=fff&size=128`;
+                const finalImg = item.profile_image_url || defaultImg;
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl transition-all group relative";
+                card.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <div class="img-container mb-4">
+                            <img src="${finalImg}" onerror="handleImageError(this)" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md">
+                        </div>
+                        <h4 class="font-bold text-slate-900">${item.full_name}</h4>
+                        <p class="text-blue-600 text-xs font-bold mb-4 uppercase tracking-wider">${item.position}</p>
+                        <div class="w-full pt-4 border-t border-slate-50 flex justify-between items-center text-xs text-slate-400">
+                            <span><i class="fa-solid fa-phone mr-1"></i> ${item.phone || '-'}</span>
+                            <button onclick="deleteItem('${item.id}', '${item.profile_image_url}')" class="hover:text-red-500 transition-colors">ลบ</button>
+                        </div>
+                    </div>`;
+                grid.appendChild(card);
+            });
+        };
+
+        // Event Listener สำหรับฟอร์ม กลับมาทำงานได้แล้วเพราะมี HTML Element ครบถ้วน
+        document.getElementById('personnel-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            toggleLoader(true);
+            try {
+                const file = document.getElementById('input-file').files[0];
+                let imgUrl = null;
+                if (file) {
+                    const path = `${Date.now()}_${file.name}`;
+                    const { error: upErr } = await dbClient.storage.from('slips').upload(path, file);
+                    if (upErr) throw upErr;
+                    imgUrl = dbClient.storage.from('slips').getPublicUrl(path).data.publicUrl;
+                }
+                const { error: dbErr } = await dbClient.from('personnel').insert([{
+                    full_name: document.getElementById('input-name').value,
+                    position: document.getElementById('input-position').value,
+                    phone: document.getElementById('input-phone').value,
+                    birth_date: document.getElementById('input-birthdate').value || null,
+                    profile_image_url: imgUrl
+                }]);
+                if (dbErr) throw dbErr;
+                document.getElementById('personnel-form').reset();
+                navigate('dashboard');
+            } catch (err) { alert(err.message); } finally { toggleLoader(false); }
+        });
+
+        window.deleteItem = async (id, imgUrl) => {
+            if (!confirm('ยืนยันลบข้อมูล?')) return;
+            toggleLoader(true);
+            try {
+                if (imgUrl) {
+                    const fileName = imgUrl.split('/').pop();
+                    await dbClient.storage.from('slips').remove([fileName]);
+                }
+                await dbClient.from('personnel').delete().eq('id', id);
+                loadData();
+            } catch (err) { alert(err.message); toggleLoader(false); }
+        };
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>
